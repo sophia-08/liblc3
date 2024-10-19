@@ -1,0 +1,2 @@
+make LC3_PLUS=0 LC3_PLUS_HR=0
+make LC3_PLUS=0 LC3_PLUS_HR=0 tools
