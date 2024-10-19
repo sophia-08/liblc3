@@ -144,6 +144,8 @@ static unsigned clock_us(void)
  * Entry point
  */
 
+int ll =0;
+
 int main(int argc, char *argv[])
 {
     /* --- Read parameters --- */
@@ -166,6 +168,10 @@ int main(int argc, char *argv[])
     if (wave_read_header(fp_in,
             &pcm_sbits, &pcm_sbytes, &srate_hz, &nchannels, &nsamples) < 0)
         error(EINVAL, "Bad or unsupported WAVE input file");
+
+    fprintf(stdout, "wavfile: pcm_sbits %d, pcm_sbytes %d, srate_hz %d, nchannels %d, nsamples %d \n", 
+        pcm_sbits, pcm_sbytes,
+        srate_hz, nchannels, nsamples);
 
     if (p.bitrate <= 0)
         error(EINVAL, "Bitrate");
@@ -200,8 +206,15 @@ int main(int argc, char *argv[])
     int bitrate = lc3_hr_resolve_bitrate(
         p.hrmode, frame_us, srate_hz, block_bytes);
 
+    fprintf(stdout, "block_bytes %d, bitrate %d \n", 
+        block_bytes, bitrate);
+
     if (bitrate != p.bitrate)
         fprintf(stderr, "Bitrate adjusted to %d bps\n", bitrate);
+
+    fprintf(stdout, "frame_us %d, enc_srate_hz %d, hrmode %d, bitrate %d, ch %d, enc_samples %d \n", 
+        frame_us, enc_srate_hz, p.hrmode,
+        bitrate, nchannels, enc_samples);
 
     lc3bin_write_header(fp_out,
         frame_us, enc_srate_hz, p.hrmode,
@@ -241,24 +254,28 @@ int main(int argc, char *argv[])
 
         int nread = wave_read_pcm(fp_in, pcm_sbytes, nchannels, frame_samples, pcm);
 
+        fprintf(stdout, "loop %d, nread %d, memset (%d, %d) \n", ll++, nread,  nread * nchannels * pcm_sbytes, nchannels * (frame_samples - nread) * pcm_sbytes);
+
         memset(pcm + nread * nchannels * pcm_sbytes, 0,
             nchannels * (frame_samples - nread) * pcm_sbytes);
 
-        if (floorf(i * frame_us * 1e-6) > nsec) {
-            float progress = fminf(
-                (float)i * frame_samples / encode_samples, 1);
+        // if (floorf(i * frame_us * 1e-6) > nsec) {
+        //     float progress = fminf(
+        //         (float)i * frame_samples / encode_samples, 1);
 
-            fprintf(stderr, "%02d:%02d [%-40s]\r",
-                    nsec / 60, nsec % 60,
-                    dash_line + (int)floorf((1 - progress) * 40));
+        //     fprintf(stderr, "%02d:%02d [%-40s]\r",
+        //             nsec / 60, nsec % 60,
+        //             dash_line + (int)floorf((1 - progress) * 40));
 
-            nsec = (int)(i * frame_us * 1e-6);
-        }
+        //     nsec = (int)(i * frame_us * 1e-6);
+        // }
 
         uint8_t *out_ptr = out;
         for (int ich = 0; ich < nchannels; ich++) {
             int frame_bytes = block_bytes / nchannels
                 + (ich < block_bytes % nchannels);
+
+            fprintf(stdout, "frame_bytes %d\n", frame_bytes);
 
             lc3_encode(enc[ich],
                 pcm_fmt, pcm + ich * pcm_sbytes, nchannels,

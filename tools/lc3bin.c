@@ -119,6 +119,7 @@ void lc3bin_write_header(FILE *fp,
  */
 void lc3bin_write_data(FILE *fp, const void *data, int nbytes)
 {
+    fprintf(stdout, "nbytes %d\n", nbytes);
     uint16_t hdr_nbytes = nbytes;
     fwrite(&hdr_nbytes, sizeof(hdr_nbytes), 1, fp);
 
